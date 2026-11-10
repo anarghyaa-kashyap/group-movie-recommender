@@ -1,0 +1,23 @@
+id,title,type,owner,story_points,sprint,priority,test_cases,acceptance
+FR-01,Register and log in,Functional,Akshata Amara,5,Sprint 1,High,TC-01; TC-AUTH-01,Valid credentials log in; invalid credentials rejected; password never echoed
+FR-02,Create group; join by code or link,Functional,Akshata Amara,3,Sprint 1,High,TC-02; TC-GRP-02,Unique 6-char code and link generated; invalid code rejected
+FR-03,Unique display names per group,Functional,Akshata Amara,2,Sprint 1,High,TC-03; TC-GRP-01,Duplicate display name in same group rejected
+FR-04,Genre-diverse 10-movie selection,Functional,Anarghyaa Kashyap,3,Sprint 1,High,TC-04; TC-PREF-01,Each member gets 10 distinct movies spanning multiple genres
+FR-05,Interested / Not Interested votes,Functional,Anarghyaa Kashyap,2,Sprint 1,High,TC-05,Every presented movie must be marked exactly once
+FR-06,Store votes with user group movie session ids,Functional,Anarghyaa Kashyap,2,Sprint 1,High,TC-06,Each vote row carries all four identifiers
+FR-07,Lock submissions; wait for all members,Functional,Anarghyaa Kashyap,5,Sprint 1,High,TC-07; TC-SESS-01,Resubmission rejected; results blocked until all submit
+FR-08,Equal-weight group aggregation,Functional,Ahana Sharan,2,Sprint 1,High,TC-08,Member order irrelevant; each member counted once
+FR-09,Content scorer over whole catalogue incl. dataset prep,Functional,Ahana Sharan,8,Sprint 1,High,TC-09; TC-RECOM-01,Unseen catalogue movies scored from metadata
+FR-11,Ranked results: title description rating,Functional,Annanya Babu,3,Sprint 1,High,TC-12,Top 10 shown in rank order with title description and rating or 'unavailable'
+FR-12,Group picks watched movie; members rate 1-5,Functional,Annanya Babu,2,Sprint 1,High,TC-13,1 and 5 accepted; 0 and 6 rejected
+FR-13,Store ratings and compute group mean,Functional,Annanya Babu,2,Sprint 1,High,TC-14; TC-FB-01,Mean of 4 and 2 is 3.0; mean of 3 4 5 is 4.0
+FR-15,Input validation and error messages,Functional,Annanya Babu,3,Sprint 1,High,TC-16; TC-ERR-01,Bad input rejected with readable message; failed save never reported as success
+FR-10,Hybrid ranking with per-group Thompson sampling bandit and cold start,Functional,Ahana Sharan,5,Sprint 2,High,TC-10; TC-11; TC-RECOM-02,Configurable weights; new group ranks on current votes + ratings only
+FR-14,Store watched movie group rating as that group's bandit reward,Functional,Annanya Babu,5,Sprint 2,High,TC-15; TC-FB-02,Next session's ranking reflects feedback; completed session unchanged
+NFR-01,Ranked list in under 3 s for 95% of requests,Non-functional,Akshata Amara,5,Sprint 2,High,TC-17; TC-PERF-01,>=95/100 runs under 3 s with 10000 movies and 10 members
+NFR-03,Security and privacy (SR-01 to SR-06),Non-functional,Akshata Amara,5,Sprint 2,High,TC-19,Auth required; cross-group access denied; salted hashes; no secrets in errors
+NFR-02,Data persists across restarts,Non-functional,Anarghyaa Kashyap,3,Sprint 2,Medium,TC-18; TC-REL-01,All records survive restart; no orphaned foreign keys
+NFR-05,Independently testable modules,Non-functional,Anarghyaa Kashyap,3,Sprint 2,Medium,module unit tests,Recommender unit-tested without UI or DB
+NFR-07,Missing ratings or descriptions handled,Non-functional,Anarghyaa Kashyap,2,Sprint 2,Medium,test_nfr07,Missing values shown as unavailable; ranking does not crash
+NFR-06,Evaluation against baselines (NDCG@10),Non-functional,Ahana Sharan,5,Sprint 2,Medium,TC-20; TC-EVAL-01,Hybrid NDCG@10 reported against rating-only and preference-only
+NFR-04,Usability test with 5 first-time users,Non-functional,Annanya Babu,5,Sprint 2,Medium,TC-USE-01,At least 4 of 5 complete core flow unaided

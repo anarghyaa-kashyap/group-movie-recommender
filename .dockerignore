@@ -1,0 +1,11 @@
+.git
+.github
+__pycache__
+*.pyc
+.pytest_cache
+data/app.db
+docs
+tests
+scripts
+k8s
+videos
