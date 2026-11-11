@@ -1,1 +1,169 @@
-<!doctype html><title>Movie Night</title><p>UI coming in Sprint 1.</p>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Movie Night</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--ink:#1d1b18;--muted:#6b665d;--accent:#c2410c;--accent-ink:#fff;--ok:#15803d;--bad:#b91c1c;--line:#e4dfd4}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line);background:var(--card)}
+header h1{font-size:18px;margin:0}
+main{max-width:920px;margin:0 auto;padding:20px 16px 60px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+h2{margin:0 0 12px;font-size:18px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:15px}
+button{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 16px;font-size:15px;cursor:pointer;margin-top:12px}
+button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+button:disabled{opacity:.5;cursor:not-allowed}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:640px){.row{grid-template-columns:1fr}}
+.msg{padding:10px 12px;border-radius:8px;margin-bottom:14px;font-size:14px}
+.msg.err{background:#fde8e8;color:var(--bad)}
+.msg.ok{background:#e7f6ec;color:var(--ok)}
+.movie{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding:12px 0}
+.movie:first-child{border-top:0}
+.movie .meta{font-size:13px;color:var(--muted)}
+.movie p{margin:6px 0 0;font-size:14px}
+.choices{display:flex;gap:6px;flex-shrink:0;align-items:flex-start}
+.choices button{margin:0;padding:8px 10px;font-size:13px;background:#eee;color:var(--ink)}
+.choices button.on.yes{background:var(--ok);color:#fff}
+.choices button.on.no{background:var(--bad);color:#fff}
+.pill{display:inline-block;background:#f1ece2;border-radius:999px;padding:2px 8px;font-size:12px;margin-right:4px}
+.code{font-family:ui-monospace,monospace;font-size:20px;letter-spacing:2px}
+.rank{font-weight:700;color:var(--accent);margin-right:6px}
+.hidden{display:none}
+.stars button{margin:0 4px 0 0;padding:8px 12px}
+</style>
+</head>
+<body>
+<header><h1>🎬 Movie Night — Group Recommender</h1><div id="who"></div></header>
+<main>
+<div id="msg"></div>
+
+<section id="auth" class="card">
+  <h2>Log in or create an account</h2>
+  <label for="u">Username</label><input id="u" autocomplete="username">
+  <label for="p">Password (min 8 characters)</label><input id="p" type="password" autocomplete="current-password">
+  <button id="loginBtn">Log in</button> <button class="ghost" id="registerBtn">Register</button>
+</section>
+
+<section id="groups" class="hidden">
+  <div class="row">
+    <div class="card"><h2>Create a group</h2>
+      <label for="gname">Group name</label><input id="gname" placeholder="Friday crew">
+      <label for="gdn">Your display name in this group</label><input id="gdn">
+      <button id="createBtn">Create group</button></div>
+    <div class="card"><h2>Join a group</h2>
+      <label for="jcode">Joining code</label><input id="jcode" placeholder="e.g. K7Q2MX">
+      <label for="jdn">Your display name in this group</label><input id="jdn">
+      <button id="joinBtn">Join group</button></div>
+  </div>
+  <div class="card"><h2>Your groups</h2><div id="glist"></div></div>
+</section>
+
+<section id="group" class="hidden card">
+  <button class="ghost" id="backBtn">← All groups</button>
+  <h2 id="gtitle"></h2>
+  <div>Joining code: <span class="code" id="gcode"></span> <span class="meta" id="glink"></span></div>
+  <p id="gmembers"></p>
+  <button id="startBtn">Start / continue movie night</button>
+  <div id="gsessions"></div>
+</section>
+
+<section id="vote" class="hidden card">
+  <h2>Mark each movie: Interested or Not Interested</h2>
+  <div id="vlist"></div>
+  <button id="submitVotes" disabled>Submit my preferences</button>
+</section>
+
+<section id="wait" class="hidden card">
+  <h2>Preferences saved and locked</h2>
+  <p id="waittext"></p>
+  <button class="ghost" id="refreshBtn">Refresh</button>
+</section>
+
+<section id="results" class="hidden card">
+  <h2>Your group's top 10</h2>
+  <p class="meta" id="rnote"></p>
+  <div id="rlist"></div>
+</section>
+
+<section id="rate" class="hidden card">
+  <h2>How was <span id="rtitle"></span>?</h2>
+  <div class="stars" id="stars"></div>
+  <p id="rsummary"></p>
+</section>
+</main>
+<script>
+const S={token:localGet('token'),user:localGet('user'),group:null,session:null,votes:{},movies:[]};
+function localGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function localSet(k,v){try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
+const $=id=>document.getElementById(id);
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function show(...ids){['auth','groups','group','vote','wait','results','rate'].forEach(x=>$(x).classList.toggle('hidden',!ids.includes(x)))}
+function flash(t,ok){$('msg').innerHTML=t?`<div class="msg ${ok?'ok':'err'}">${esc(t)}</div>`:''}
+async function api(path,opt={}){
+  const r=await fetch(path,{...opt,headers:{'Content-Type':'application/json',...(S.token?{Authorization:'Bearer '+S.token}:{})}});
+  let data={};try{data=await r.json()}catch(e){}
+  if(!r.ok){if(r.status===401&&S.token){logout()}throw new Error(data.error||'Request failed. Nothing was saved.')}
+  return data}
+function logout(){S.token=null;localSet('token',null);$('who').innerHTML='';show('auth')}
+async function auth(kind){
+  flash('');const body=JSON.stringify({username:$('u').value.trim(),password:$('p').value});
+  try{
+    if(kind==='register'){await api('/api/register',{method:'POST',body});flash('Account created.',true)}
+    const d=await api('/api/login',{method:'POST',body});S.token=d.token;S.user=d.username;localSet('token',d.token);localSet('user',d.username);loadGroups()
+  }catch(e){flash(e.message)}}
+$('loginBtn').onclick=()=>auth('login');$('registerBtn').onclick=()=>auth('register');
+async function loadGroups(){
+  $('who').innerHTML=`${esc(S.user||'')} <button class="ghost" onclick="logout()" style="margin:0 0 0 8px;padding:6px 10px">Log out</button>`;
+  const join=new URLSearchParams(location.search).get('join');if(join)$('jcode').value=join;
+  try{const gs=await api('/api/groups');
+    $('glist').innerHTML=gs.length?gs.map(g=>`<div class="movie"><div><b>${esc(g.name)}</b><div class="meta">You are ${esc(g.display_name)} · code ${esc(g.join_code)}</div></div><button onclick="openGroup(${g.id})" style="margin:0">Open</button></div>`).join(''):'<p class="meta">No groups yet.</p>';
+    show('groups')}catch(e){flash(e.message)}}
+$('createBtn').onclick=async()=>{flash('');try{const g=await api('/api/groups',{method:'POST',body:JSON.stringify({name:$('gname').value,display_name:$('gdn').value})});flash(`Group created. Share code ${g.join_code}.`,true);openGroup(g.group_id)}catch(e){flash(e.message)}};
+$('joinBtn').onclick=async()=>{flash('');try{const g=await api('/api/groups/join',{method:'POST',body:JSON.stringify({code:$('jcode').value,display_name:$('jdn').value})});flash(`Joined ${g.name}.`,true);openGroup(g.group_id)}catch(e){flash(e.message)}};
+$('backBtn').onclick=()=>{flash('');loadGroups()};
+async function openGroup(id){
+  try{const g=await api('/api/groups/'+id);S.group=g;
+    $('gtitle').textContent=g.name;$('gcode').textContent=g.join_code;$('glink').textContent=`· link: ${location.origin}/?join=${g.join_code}`;
+    $('gmembers').textContent='Members: '+g.members.join(', ');
+    $('gsessions').innerHTML=g.sessions.length?'<h2 style="margin-top:16px">Past movie nights</h2>'+g.sessions.map(s=>`<div class="movie"><div>Session #${s.id} · ${esc(s.status)}</div><button class="ghost" style="margin:0" onclick="openSession(${s.id})">View</button></div>`).join(''):'';
+    show('group')}catch(e){flash(e.message)}}
+$('startBtn').onclick=async()=>{flash('');try{const s=await api(`/api/groups/${S.group.id}/sessions`,{method:'POST'});openSession(s.session_id)}catch(e){flash(e.message)}};
+async function openSession(id){
+  S.session=id;
+  try{const st=await api(`/api/sessions/${id}/status`);
+    if(st.status==='collecting'){
+      const m=await api(`/api/sessions/${id}/movies`);
+      if(m.locked){return showWait(st)}
+      S.movies=m.movies;S.votes={};renderVotes();show('vote')}
+    else{await showResults(st)}
+  }catch(e){flash(e.message)}}
+function renderVotes(){
+  $('vlist').innerHTML=S.movies.map(m=>`<div class="movie"><div><b>${esc(m.title)}</b> <span class="meta">${m.year??''}</span><div>${m.genres.map(g=>`<span class="pill">${esc(g)}</span>`).join('')} <span class="meta">${esc(m.rating_display)}</span></div><p>${esc(m.description)}</p></div>
+  <div class="choices"><button class="yes ${S.votes[m.id]===true?'on':''}" onclick="vote(${m.id},true)">Interested</button><button class="no ${S.votes[m.id]===false?'on':''}" onclick="vote(${m.id},false)">Not interested</button></div></div>`).join('');
+  $('submitVotes').disabled=Object.keys(S.votes).length!==S.movies.length}
+function vote(id,v){S.votes[id]=v;renderVotes()}
+$('submitVotes').onclick=async()=>{flash('');try{await api(`/api/sessions/${S.session}/preferences`,{method:'POST',body:JSON.stringify({votes:Object.entries(S.votes).map(([k,v])=>({movie_id:+k,interested:v}))})});
+  flash('Preferences saved and locked.',true);openSession(S.session)}catch(e){flash(e.message)}};
+function showWait(st){$('waittext').textContent=st.waiting_for.length?`Waiting for: ${st.waiting_for.join(', ')}. Recommendations appear once everyone has submitted.`:'Everyone has submitted.';show('wait')}
+$('refreshBtn').onclick=()=>openSession(S.session);
+async function showResults(st){
+  const r=await api(`/api/sessions/${S.session}/recommendations`);
+  $('rnote').textContent=r.note;
+  $('rlist').innerHTML=r.recommendations.map(m=>`<div class="movie"><div><span class="rank">#${m.rank}</span><b>${esc(m.title)}</b> <span class="meta">${m.year??''}</span><div>${m.genres.map(g=>`<span class="pill">${esc(g)}</span>`).join('')} <span class="meta">⭐ ${esc(m.rating_display)} · ${m.match}% group match</span></div><p>${esc(m.description)}</p></div>
+  ${st.watched_movie_id===null?`<div class="choices"><button style="background:var(--accent);color:#fff" onclick="watched(${m.id})">We watched this</button></div>`:(st.watched_movie_id===m.id?'<div class="choices"><span class="pill">Watched</span></div>':'')}</div>`).join('');
+  if(st.watched_movie_id!==null){const w=r.recommendations.find(m=>m.id===st.watched_movie_id);$('rtitle').textContent=w?w.title:'the movie';
+    $('stars').innerHTML=[1,2,3,4,5].map(n=>`<button onclick="rate(${n})">${n} ★</button>`).join('');
+    const f=await api(`/api/sessions/${S.session}/feedback`);$('rsummary').textContent=f.group_mean!==null?`Group average: ${f.group_mean} from ${f.ratings_count} rating(s).`:'No ratings yet.';
+    show('results','rate')}else show('results')}
+async function watched(id){flash('');try{await api(`/api/sessions/${S.session}/watched`,{method:'POST',body:JSON.stringify({movie_id:id})});flash('Movie recorded. Now rate it.',true);openSession(S.session)}catch(e){flash(e.message)}}
+async function rate(n){flash('');try{const f=await api(`/api/sessions/${S.session}/ratings`,{method:'POST',body:JSON.stringify({rating:n})});flash('Rating saved.',true);$('rsummary').textContent=`Group average: ${f.group_mean} from ${f.ratings_count} rating(s).`}catch(e){flash(e.message)}}
+if(S.token){loadGroups()}else{show('auth')}
+</script>
+</body>
+</html>
