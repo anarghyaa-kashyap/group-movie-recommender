@@ -79,6 +79,14 @@ class VoteSubmission(BaseModel):
     votes: list[Vote]
 
 
+class Watched(BaseModel):
+    movie_id: int
+
+
+class Rating(BaseModel):
+    rating: int = Field(ge=1, le=5)
+
+
 def current_user(authorization: str = Header(default="")):
     token = authorization.removeprefix("Bearer ").strip()
     if not token:
@@ -264,6 +272,15 @@ def submit_preferences(session_id: int, body: VoteSubmission, user_id: int = Dep
     return {"message": "Preferences saved and locked.", "waiting_for": pending}
 
 
+def group_history(conn, group_id, before_session):
+    rows = conn.execute(
+        """SELECT s.watched_movie_id AS movie_id, AVG(r.rating) AS mean FROM sessions s JOIN ratings r ON r.session_id = s.id
+           WHERE s.group_id = ? AND s.id < ? AND s.watched_movie_id IS NOT NULL GROUP BY s.id ORDER BY s.id""",
+        (group_id, before_session),
+    ).fetchall()
+    return [(r["movie_id"], r["mean"]) for r in rows]
+
+
 def generate(conn, s):
     votes = {}
     for r in conn.execute("SELECT user_id, movie_id, interested FROM preferences WHERE session_id = ?", (s["id"],)):
@@ -271,6 +288,7 @@ def generate(conn, s):
     ranked = recommender.rank_movies(
         features(),
         votes,
+        history=group_history(conn, s["group_id"], s["id"]),
         weights=recommender.Weights(),
         rng=np.random.default_rng(s["id"]),
         top_k=10,
@@ -318,4 +336,54 @@ def recommendations(session_id: int, user_id: int = Depends(current_user)):
             for r in rows
         ],
         "note": "Recommendations balance the group's current choices with public ratings; they cannot guarantee every member will enjoy the film.",
+    }
+
+
+@app.post("/api/sessions/{session_id}/watched")
+def mark_watched(session_id: int, body: Watched, user_id: int = Depends(current_user)):
+    with transaction() as conn:
+        s = load_session(conn, session_id, user_id)
+        if s["status"] == "collecting":
+            raise HTTPException(409, "Recommendations are not ready yet.")
+        if s["watched_movie_id"] is not None:
+            raise HTTPException(409, "The group has already chosen a movie for this session.")
+        if not conn.execute("SELECT 1 FROM recommendations WHERE session_id = ? AND movie_id = ?", (session_id, body.movie_id)).fetchone():
+            raise HTTPException(422, "Please choose a movie from this session's recommendations.")
+        conn.execute("UPDATE sessions SET watched_movie_id = ?, status = 'watched' WHERE id = ?", (body.movie_id, session_id))
+    return {"message": "Movie recorded. Each member can now rate it."}
+
+
+@app.post("/api/sessions/{session_id}/ratings", status_code=201)
+def rate(session_id: int, body: Rating, user_id: int = Depends(current_user)):
+    try:
+        with transaction() as conn:
+            s = load_session(conn, session_id, user_id)
+            if s["watched_movie_id"] is None:
+                raise HTTPException(409, "Pick the movie the group watched before rating.")
+            if not conn.execute("SELECT 1 FROM session_participants WHERE session_id = ? AND user_id = ?", (session_id, user_id)).fetchone():
+                raise HTTPException(403, "Only session participants can rate this movie.")
+            conn.execute(
+                "INSERT INTO ratings (session_id, group_id, user_id, movie_id, rating) VALUES (?,?,?,?,?)",
+                (session_id, s["group_id"], user_id, s["watched_movie_id"], body.rating),
+            )
+    except sqlite3.IntegrityError:
+        raise HTTPException(409, "You have already rated this movie.")
+    return {"message": "Rating saved.", **feedback_summary(session_id, user_id)}
+
+
+@app.get("/api/sessions/{session_id}/feedback")
+def feedback(session_id: int, user_id: int = Depends(current_user)):
+    return feedback_summary(session_id, user_id)
+
+
+def feedback_summary(session_id, user_id):
+    conn = connect()
+    s = load_session(conn, session_id, user_id)
+    ratings = [r["rating"] for r in conn.execute("SELECT rating FROM ratings WHERE session_id = ?", (session_id,))]
+    conn.close()
+    return {
+        "session_id": session_id,
+        "movie_id": s["watched_movie_id"],
+        "ratings_count": len(ratings),
+        "group_mean": round(sum(ratings) / len(ratings), 2) if ratings else None,
     }
