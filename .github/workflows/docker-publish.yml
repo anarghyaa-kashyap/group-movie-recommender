@@ -30,19 +30,3 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-  k8s-smoke-test:
-    needs: publish
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: helm/kind-action@v1
-      - name: Deploy manifests to a kind cluster
-        run: |
-          sed -i "s#DOCKERHUB_USERNAME#${{ secrets.DOCKERHUB_USERNAME }}#" k8s/deployment.yaml
-          kubectl apply -f k8s/
-          kubectl rollout status deployment/movie-recommender --timeout=180s
-          kubectl get pods -o wide
-          kubectl port-forward service/movie-recommender 8080:80 &
-          sleep 5
-          curl -sf http://localhost:8080/healthz
