@@ -1,0 +1,224 @@
+{
+  "protocol": {
+    "seeds": [
+      7,
+      11,
+      23
+    ],
+    "groups": 30,
+    "sessions": 8,
+    "catalogue_size": 5487
+  },
+  "models": {
+    "rl": {
+      "registered_model": "group-movie-recommender-rl",
+      "version": 1,
+      "run_id": "4788da266cda4526a1bfd88363841a0f",
+      "train_seconds": 0.0,
+      "tuning_seconds": 0.0,
+      "family": "RL",
+      "parameters": 22,
+      "summary": "content + Bayesian rating + per-group Thompson-sampling bandit (weights 0.8/0.2/0.05)"
+    },
+    "rl_v2": {
+      "registered_model": "group-movie-recommender-rl-v2",
+      "version": 1,
+      "run_id": "53837b753d03431f872c7675b9df93a1",
+      "train_seconds": 0.0,
+      "tuning_seconds": 213.0,
+      "family": "RL",
+      "parameters": 3,
+      "summary": "content + Bayesian rating + adaptive per-group bandit over [C, R, 1] (weights 0.8/0.2, history up to 0.1, tau 1.0)"
+    },
+    "dl": {
+      "registered_model": "group-movie-recommender-dl",
+      "version": 2,
+      "run_id": "acf4d4bf122b4107b9816cd2bc8be7e4",
+      "train_seconds": 15.8,
+      "tuning_seconds": 0.0,
+      "family": "DL",
+      "parameters": 75457,
+      "summary": "PyTorch two-tower network (item / member towers, mean+min group pooling, dot-product score)"
+    },
+    "qml": {
+      "registered_model": "group-movie-recommender-qml",
+      "version": 1,
+      "run_id": "adee896d03c3490e9e11bb9f8a1b0566",
+      "train_seconds": 18.2,
+      "tuning_seconds": 0.0,
+      "family": "QML",
+      "parameters": 42,
+      "summary": "6-qubit variational circuit, 3 data re-uploading layers (36 quantum + 6 readout parameters)"
+    }
+  },
+  "results": {
+    "rl": {
+      "ndcg@10": 0.6712,
+      "ndcg@10_per_seed": [
+        0.6894,
+        0.6547,
+        0.6693
+      ],
+      "precision@10": 0.4664,
+      "mean_reward": 3.936,
+      "reward_per_session": [
+        4.0,
+        3.967,
+        3.933,
+        3.911,
+        3.9,
+        3.944,
+        3.9,
+        3.933
+      ],
+      "latency_ms_mean": 101.39,
+      "latency_ms_p95": 151.59,
+      "median_imdb_votes_top10": 442491
+    },
+    "rl_v2": {
+      "ndcg@10": 0.676,
+      "ndcg@10_per_seed": [
+        0.697,
+        0.654,
+        0.6769
+      ],
+      "precision@10": 0.485,
+      "mean_reward": 3.936,
+      "reward_per_session": [
+        4.0,
+        3.978,
+        4.0,
+        3.789,
+        3.956,
+        3.944,
+        3.889,
+        3.933
+      ],
+      "latency_ms_mean": 90.46,
+      "latency_ms_p95": 122.66,
+      "median_imdb_votes_top10": 454449
+    },
+    "dl": {
+      "ndcg@10": 0.6848,
+      "ndcg@10_per_seed": [
+        0.6958,
+        0.6798,
+        0.6788
+      ],
+      "precision@10": 0.5026,
+      "mean_reward": 3.804,
+      "reward_per_session": [
+        3.367,
+        3.856,
+        3.856,
+        3.867,
+        3.822,
+        3.9,
+        3.933,
+        3.833
+      ],
+      "latency_ms_mean": 9.6,
+      "latency_ms_p95": 12.79,
+      "median_imdb_votes_top10": 77938
+    },
+    "qml": {
+      "ndcg@10": 0.6486,
+      "ndcg@10_per_seed": [
+        0.6648,
+        0.6262,
+        0.6547
+      ],
+      "precision@10": 0.4156,
+      "mean_reward": 3.829,
+      "reward_per_session": [
+        3.822,
+        3.833,
+        3.867,
+        3.822,
+        3.822,
+        3.833,
+        3.833,
+        3.8
+      ],
+      "latency_ms_mean": 151.14,
+      "latency_ms_p95": 191.87,
+      "median_imdb_votes_top10": 371352
+    },
+    "preference_only": {
+      "ndcg@10": 0.5932,
+      "ndcg@10_per_seed": [
+        0.6218,
+        0.5703,
+        0.5876
+      ],
+      "precision@10": 0.2714,
+      "mean_reward": 3.782,
+      "reward_per_session": [
+        3.833,
+        3.789,
+        3.833,
+        3.767,
+        3.722,
+        3.733,
+        3.789,
+        3.789
+      ],
+      "latency_ms_mean": 106.97,
+      "latency_ms_p95": 166.04,
+      "median_imdb_votes_top10": 52596
+    },
+    "rating_only": {
+      "ndcg@10": 0.5549,
+      "ndcg@10_per_seed": [
+        0.5537,
+        0.5503,
+        0.5607
+      ],
+      "precision@10": 0.2257,
+      "mean_reward": 3.643,
+      "reward_per_session": [
+        3.756,
+        3.633,
+        3.689,
+        3.656,
+        3.622,
+        3.567,
+        3.633,
+        3.589
+      ],
+      "latency_ms_mean": 8.63,
+      "latency_ms_p95": 19.39,
+      "median_imdb_votes_top10": 1081561
+    }
+  },
+  "sanity_example": {
+    "rl": [
+      "Guardians of the Galaxy (8.0, 1,023,350 votes)",
+      "Deadpool (8.0, 882,037 votes)",
+      "Thor: Ragnarok (7.9, 564,511 votes)",
+      "Kingsman: The Secret Service (7.7, 579,388 votes)",
+      "Deadpool 2 (7.7, 460,610 votes)"
+    ],
+    "rl_v2": [
+      "Guardians of the Galaxy (8.0, 1,023,350 votes)",
+      "Deadpool (8.0, 882,037 votes)",
+      "Thor: Ragnarok (7.9, 564,511 votes)",
+      "Kingsman: The Secret Service (7.7, 579,388 votes)",
+      "Deadpool 2 (7.7, 460,610 votes)"
+    ],
+    "dl": [
+      "Metallica Through the Never (7.2, 16,363 votes)",
+      "G.O.R.A. (8.0, 55,131 votes)",
+      "Yahsi Bati (7.4, 30,709 votes)",
+      "Frequently Asked Questions About Time Travel (7.1, 31,829 votes)",
+      "Inception (8.8, 2,002,816 votes)"
+    ],
+    "qml": [
+      "Anbe Sivam (8.7, 15,469 votes)",
+      "How to Train Your Dragon (8.1, 651,499 votes)",
+      "The Incredibles (8.0, 642,759 votes)",
+      "WALL\u00b7E (8.4, 974,734 votes)",
+      "Sen to Chihiro no kamikakushi (8.6, 626,693 votes)"
+    ]
+  }
+}

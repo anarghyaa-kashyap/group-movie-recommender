@@ -1,0 +1,9 @@
+# Optional: only for the model comparison scripts (scripts/rl_model.py, dl_model.py, qml_model.py,
+# compare_models.py). Not needed by the app or its Docker image.
+-r requirements.txt
+pandas>=2.0
+mlflow>=3.0
+torch>=2.2
+qiskit>=1.2
+matplotlib>=3.8   # optional: PNG drawing of the QML circuit in MLflow
+pylatexenc>=2.10  # optional: needed by Qiskit's matplotlib circuit drawer
