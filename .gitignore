@@ -3,3 +3,15 @@ __pycache__/
 .pytest_cache/
 data/app.db
 .venv/
+
+# Local-only deliverables and notes (not part of the repo)
+/CLAUDE.md
+/Simplified plan (to Thu 12 Nov).pdf
+/anarghyaa-final-kit/
+/docs/burn_chart.png
+/docs/burn_data.json
+/movie-recommender_dockerhub_PAT.txt
+/scripts/burn_chart.py
+/scripts/create_github_backlog_existing.sh
+/scripts/evaluate.py
+/to-do.png
